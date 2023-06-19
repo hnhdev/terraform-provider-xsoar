@@ -130,17 +130,15 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	}
 	insecure = config.Insecure.Value
 
-	if config.HttpHeadersFromEnv == nil {
-		config.HttpHeadersFromEnv= map[string]string{}
-	}
-
 	// Create a new xsoar client and set it to the provider client
 	openapiConfig := openapi.NewConfiguration()
 	openapiConfig.Servers[0].URL = mainhost
 	openapiConfig.AddDefaultHeader("Authorization", apikey)
 	openapiConfig.AddDefaultHeader("Accept", "application/json,*/*")
-	for key, value := range config.HttpHeadersFromEnv {
-		openapiConfig.AddDefaultHeader(key, os.Getenv(value))
+	if config.HttpHeadersFromEnv != nil {
+		for key, value := range config.HttpHeadersFromEnv {
+			openapiConfig.AddDefaultHeader(key, os.Getenv(value))
+		}
 	}
 	if insecure {
 		tr := &http.Transport{
