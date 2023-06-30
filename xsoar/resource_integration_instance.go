@@ -3,17 +3,19 @@ package xsoar
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"io"
-	"log"
-	"net/http"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type resourceIntegrationInstanceType struct{}
@@ -36,6 +38,10 @@ func (r resourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.Sch
 				Type:          types.StringType,
 				Required:      true,
 				PlanModifiers: append(planModifiers, tfsdk.RequiresReplace()),
+			},
+			"enabled": {
+				Type:     types.BoolType,
+				Optional: true,
 			},
 			"config": {
 				Type:     types.MapType{ElemType: types.StringType},
@@ -119,7 +125,13 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			moduleInstance["configuration"] = configuration
 			moduleInstance["data"] = make([]map[string]interface{}, 0)
 			moduleInstance["defaultIgnore"] = false
-			moduleInstance["enabled"] = "true"
+			var Enabled string
+			if plan.Enabled.Null {
+				Enabled = "true"
+			} else {
+				Enabled = strconv.FormatBool(plan.Enabled.Value)
+			}
+			moduleInstance["enabled"] = Enabled
 			// todo: add this as a config option
 			//moduleInstance["engine"] = ""
 			//moduleInstance["engineGroup"] = ""
@@ -259,6 +271,13 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
 	}
 
+	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
+	if err == nil {
+		result.Enabled = types.Bool{Value: Enabled}
+	} else {
+		result.Enabled = types.Bool{Null: true}
+	}
+
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
 	if ok {
 		result.IncomingMapperId = types.String{Value: IncomingMapperId}
@@ -376,6 +395,8 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 		}
 	}
 
+	log.Println(integrationConfigs)
+
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
 		Name:              types.String{Value: integration["name"].(string)},
@@ -384,6 +405,13 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 		Account:           state.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
 		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+	}
+
+	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
+	if err == nil {
+		result.Enabled = types.Bool{Value: Enabled}
+	} else {
+		result.Enabled = types.Bool{Null: true}
 	}
 
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
@@ -448,7 +476,13 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 			moduleInstance["configuration"] = configuration
 			moduleInstance["data"] = make([]map[string]interface{}, 0)
 			moduleInstance["defaultIgnore"] = false
-			moduleInstance["enabled"] = "true"
+			var Enabled string
+			if plan.Enabled.Null {
+				Enabled = "true"
+			} else {
+				Enabled = strconv.FormatBool(plan.Enabled.Value)
+			}
+			moduleInstance["enabled"] = Enabled
 			// todo: add this as a config option
 			//moduleInstance["engine"] = ""
 			//moduleInstance["engineGroup"] = ""
@@ -568,6 +602,8 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		}
 	}
 
+	log.Println(integrationConfigs)
+
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
 		Name:              types.String{Value: integration["name"].(string)},
@@ -576,6 +612,13 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		Account:           plan.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
 		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+	}
+
+	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
+	if err == nil {
+		result.Enabled = types.Bool{Value: Enabled}
+	} else {
+		result.Enabled = types.Bool{Null: true}
 	}
 
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
@@ -695,6 +738,8 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		}
 	}
 
+	log.Println(integrationConfigs)
+
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
 		Name:              types.String{Value: integration["name"].(string)},
@@ -702,6 +747,13 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
 		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+	}
+
+	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
+	if err == nil {
+		result.Enabled = types.Bool{Value: Enabled}
+	} else {
+		result.Enabled = types.Bool{Null: true}
 	}
 
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
