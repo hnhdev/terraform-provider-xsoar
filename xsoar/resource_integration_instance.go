@@ -259,8 +259,6 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		}
 	}
 
-	log.Println(integrationConfigs)
-
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
 		Name:              types.String{Value: integration["name"].(string)},
@@ -394,8 +392,6 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 				}
 		}
 	}
-
-	log.Println(integrationConfigs)
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -602,8 +598,6 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		}
 	}
 
-	log.Println(integrationConfigs)
-
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
 		Name:              types.String{Value: integration["name"].(string)},
@@ -737,8 +731,6 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 				}
 		}
 	}
-
-	log.Println(integrationConfigs)
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
