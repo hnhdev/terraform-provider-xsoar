@@ -500,6 +500,9 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 				break
 			}
 		}
+		if !param["hasvalue"].(bool) {
+			param["value"] = param["defaultValue"].(string)
+		}
 		moduleInstance["data"] = append(moduleInstance["data"].([]map[string]interface{}), param)
 	}
 	var integration map[string]interface{}
