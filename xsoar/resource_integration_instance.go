@@ -487,12 +487,15 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 			break
 		}
 	}
+
+	var configs map[string]string
+	plan.Config.ElementsAs(ctx, &configs, true)
 	for _, parameter := range moduleConfiguration {
 		param := parameter.(map[string]interface{})
 		param["hasvalue"] = false
-		for configName, configValue := range plan.Config.Elems {
+		for configName, configValue := range configs {
 			if param["display"].(string) == configName || param["name"].(string) == configName {
-				param["value"], _ = configValue.ToTerraformValue(ctx)
+				param["value"] = configValue
 				param["hasvalue"] = true
 				break
 			}
