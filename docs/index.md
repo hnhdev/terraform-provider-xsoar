@@ -1,6 +1,6 @@
 # Terraform XSOAR Provider
 
-The Terraform XSOAR provider is a plugin for Terraform that allows for the management and configuration of Palo Alto's Cortex XSOAR platform. This provider can be used to manage single server and multi-tenant architectures, hosts with elastic backends, and high availability groups. 
+The Terraform XSOAR provider is a plugin for Terraform that allows for the management and configuration of Palo Alto's Cortex XSOAR platform. This provider can be used to manage single server and multi-tenant architectures, hosts with elastic backends, and high availability groups.
 
 
 ## Example Single Tenant Usage
@@ -12,6 +12,9 @@ provider "xsoar" {
   # you should use override.tf to keep this value out of version control
   api_key   = "your_api_key"
   insecure  = true
+  http_headers_from_env = {
+    Proxy-Authorization = "PROXY_AUTH_TOKEN"
+  }
 }
 
 resource "xsoar_integration_instance" "threatcentral_1" {
@@ -58,7 +61,7 @@ resource "xsoar_account" "acc1" {
   depends_on         = [xsoar_host.host1]
 }
 ```
-The `xsoar_ha_group` is an XSOAR construct representing a group of host servers sharing a common configuration and elastic backend. 
+The `xsoar_ha_group` is an XSOAR construct representing a group of host servers sharing a common configuration and elastic backend.
 
 Each `xsoar_host` resource represents an installation of the XSOAR host installer on a server. The actual server must exist prior to deploying the resource and SSH configuration must be supplied via the `server_url`, `ssh_user`, and `ssh_key_file` attributes. The Terraform plugin will download the correct host installer from the Main host, transfer the installer via SSH, and execute the installation of XSOAR on the host. Once the installation is complete the host automatically joins the multi-tenant deployment and can be seen from the Main host. Hosts can belong to an HA Group, or they can be standalone instances. Standalone hosts can be configured to use either elastic or boltdb depending on whether the `elasticsearch_url` attribute is present.
 
