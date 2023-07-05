@@ -40,6 +40,7 @@ resource "xsoar_integration_instance" "example" {
 
 ## Argument Reference
 - **name** (Required) The name of the integration instance.
+- **enabled** (Optional) Whether the integration should be enabled, defaults to True.
 - **integration_name** (Required) The name of the integration to be used. This represents the kind of integration to be configured, not the individual instance.
 - **config** (Required) A map of keys and values that configure the integration. The keys and their accepted values are dependent on the integration itself.
 - **account** (Optional) The name of the multi-tenant account for the instance of the integration.
