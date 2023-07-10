@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"io"
+	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
@@ -114,37 +115,29 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 		}
 	}
 
-	//var integrationConfigs map[string]attr.Value
-	integrationConfigs := make(map[string]attr.Value)
+	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
-		integrationConfigs = map[string]attr.Value{}
+		integrationConfigs = map[string]any{}
 		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
-		var valueattr attr.Value
 		switch reflect.TypeOf(integration["data"]).Kind() {
 			case reflect.Slice:
 				s := reflect.ValueOf(integration["data"])
 				for i := 0; i < s.Len(); i++ {
 					integrationConfig = s.Index(i).Interface().(map[string]interface{})
 					log.Println(integrationConfig)
-
-					valueconf, ok := integrationConfig["value"].(string)
-					if ok {
-						valueattr = types.String{ Value: valueconf,}
-					} else {
-						valueattr = types.String{ Value: "",}
-					}
-
 					nameconf, ok := integrationConfig["name"].(string)
 					if ok {
-						integrationConfigs[nameconf] = valueattr.(attr.Value)
+						integrationConfigs[nameconf] = integrationConfig["value"]
 					} else {
 						break
 					}
 				}
 		}
 	}
+	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
+
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -153,7 +146,7 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		Account:           config.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:            types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+		Config:            types.String{Value: string(integrationConfigsJson)},
 	}
 
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)

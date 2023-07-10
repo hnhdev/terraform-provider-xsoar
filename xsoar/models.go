@@ -57,7 +57,7 @@ type IntegrationInstance struct {
 	Name              types.String `tfsdk:"name"`
 	Id                types.String `tfsdk:"id"`
 	IntegrationName   types.String `tfsdk:"integration_name"`
-	Config            types.Map    `tfsdk:"config"`
+	Config            types.String `tfsdk:"config"`
 	Enabled           types.Bool   `tfsdk:"enabled"`
 	PropagationLabels types.Set    `tfsdk:"propagation_labels"`
 	Account           types.String `tfsdk:"account"`

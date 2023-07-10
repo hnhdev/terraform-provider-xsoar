@@ -2,12 +2,8 @@ package xsoar
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 type resourceIntegrationInstanceType struct{}
@@ -41,9 +43,10 @@ func (r resourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.Sch
 			"enabled": {
 				Type:     types.BoolType,
 				Optional: true,
+				Computed: true,
 			},
 			"config": {
-				Type:     types.MapType{ElemType: types.StringType},
+				Type:     types.StringType,
 				Optional: true,
 				Computed: true,
 			},
@@ -169,8 +172,15 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			break
 		}
 	}
-	var configs map[string]string
-	plan.Config.ElementsAs(ctx, &configs, true)
+	var configs map[string]any
+	err = json.Unmarshal([]byte(plan.Config.Value), &configs)
+    if err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating integration instance",
+			"Could not parse integration instance config json: "+err.Error(),
+		)
+		return
+    }
 	for _, parameter := range moduleConfiguration {
 		param := parameter.(map[string]interface{})
 		param["hasvalue"] = false
@@ -226,37 +236,29 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		}
 	}
 
-	//var integrationConfigs map[string]attr.Value
-	integrationConfigs := make(map[string]attr.Value)
+	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
-		integrationConfigs = map[string]attr.Value{}
+		integrationConfigs = map[string]any{}
 		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
-		var valueattr attr.Value
 		switch reflect.TypeOf(integration["data"]).Kind() {
 			case reflect.Slice:
 				s := reflect.ValueOf(integration["data"])
 				for i := 0; i < s.Len(); i++ {
 					integrationConfig = s.Index(i).Interface().(map[string]interface{})
 					log.Println(integrationConfig)
-
-					valueconf, ok := integrationConfig["value"].(string)
-					if ok {
-						valueattr = types.String{ Value: valueconf,}
-					} else {
-						valueattr = types.String{ Value: "",}
-					}
-
 					nameconf, ok := integrationConfig["name"].(string)
 					if ok {
-						integrationConfigs[nameconf] = valueattr.(attr.Value)
+						integrationConfigs[nameconf] = integrationConfig["value"]
 					} else {
 						break
 					}
 				}
 		}
 	}
+	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
+
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -265,7 +267,7 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		Account:           plan.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+		Config:			   types.String{Value: string(integrationConfigsJson)},
 	}
 
 	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
@@ -360,37 +362,29 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 		}
 	}
 
-	//var integrationConfigs map[string]attr.Value
-	integrationConfigs := make(map[string]attr.Value)
+	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
-		integrationConfigs = map[string]attr.Value{}
+		integrationConfigs = map[string]any{}
 		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
-		var valueattr attr.Value
 		switch reflect.TypeOf(integration["data"]).Kind() {
 			case reflect.Slice:
 				s := reflect.ValueOf(integration["data"])
 				for i := 0; i < s.Len(); i++ {
 					integrationConfig = s.Index(i).Interface().(map[string]interface{})
 					log.Println(integrationConfig)
-
-					valueconf, ok := integrationConfig["value"].(string)
-					if ok {
-						valueattr = types.String{ Value: valueconf,}
-					} else {
-						valueattr = types.String{ Value: "",}
-					}
-
 					nameconf, ok := integrationConfig["name"].(string)
 					if ok {
-						integrationConfigs[nameconf] = valueattr.(attr.Value)
+						integrationConfigs[nameconf] = integrationConfig["value"]
 					} else {
 						break
 					}
 				}
 		}
 	}
+	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
+
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -399,7 +393,7 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		Account:           state.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+		Config:			   types.String{Value: string(integrationConfigsJson)},
 	}
 
 	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
@@ -517,8 +511,15 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		}
 	}
 
-	var configs map[string]string
-	plan.Config.ElementsAs(ctx, &configs, true)
+	var configs map[string]any
+	err = json.Unmarshal([]byte(plan.Config.Value), &configs)
+    if err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating integration instance",
+			"Could not parse integration instance config json: "+err.Error(),
+		)
+		return
+    }
 	for _, parameter := range moduleConfiguration {
 		param := parameter.(map[string]interface{})
 		param["hasvalue"] = false
@@ -568,37 +569,29 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		}
 	}
 
-	//var integrationConfigs map[string]attr.Value
-	integrationConfigs := make(map[string]attr.Value)
+	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
-		integrationConfigs = map[string]attr.Value{}
+		integrationConfigs = map[string]any{}
 		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
-		var valueattr attr.Value
 		switch reflect.TypeOf(integration["data"]).Kind() {
 			case reflect.Slice:
 				s := reflect.ValueOf(integration["data"])
 				for i := 0; i < s.Len(); i++ {
 					integrationConfig = s.Index(i).Interface().(map[string]interface{})
 					log.Println(integrationConfig)
-
-					valueconf, ok := integrationConfig["value"].(string)
-					if ok {
-						valueattr = types.String{ Value: valueconf,}
-					} else {
-						valueattr = types.String{ Value: "",}
-					}
-
 					nameconf, ok := integrationConfig["name"].(string)
 					if ok {
-						integrationConfigs[nameconf] = valueattr.(attr.Value)
+						integrationConfigs[nameconf] = integrationConfig["value"]
 					} else {
 						break
 					}
 				}
 		}
 	}
+	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
+
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -607,7 +600,7 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		Account:           plan.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+		Config:			   types.String{Value: string(integrationConfigsJson)},
 	}
 
 	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
@@ -702,37 +695,28 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		}
 	}
 
-	//var integrationConfigs map[string]attr.Value
-	integrationConfigs := make(map[string]attr.Value)
+	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
-		integrationConfigs = map[string]attr.Value{}
+		integrationConfigs = map[string]any{}
 		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
-		var valueattr attr.Value
 		switch reflect.TypeOf(integration["data"]).Kind() {
 			case reflect.Slice:
 				s := reflect.ValueOf(integration["data"])
 				for i := 0; i < s.Len(); i++ {
 					integrationConfig = s.Index(i).Interface().(map[string]interface{})
 					log.Println(integrationConfig)
-
-					valueconf, ok := integrationConfig["value"].(string)
-					if ok {
-						valueattr = types.String{ Value: valueconf,}
-					} else {
-						valueattr = types.String{ Value: "",}
-					}
-
 					nameconf, ok := integrationConfig["name"].(string)
 					if ok {
-						integrationConfigs[nameconf] = valueattr.(attr.Value)
+						integrationConfigs[nameconf] = integrationConfig["value"]
 					} else {
 						break
 					}
 				}
 		}
 	}
+	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
@@ -740,7 +724,7 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		Id:                types.String{Value: integration["id"].(string)},
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:			   types.Map{Elems: integrationConfigs, ElemType: types.StringType},
+		Config:			   types.String{Value: string(integrationConfigsJson)},
 	}
 
 	Enabled, err := strconv.ParseBool(integration["enabled"].(string))
