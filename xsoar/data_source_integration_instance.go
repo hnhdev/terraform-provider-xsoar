@@ -2,12 +2,12 @@ package xsoar
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"io"
-	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
@@ -122,22 +122,28 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 	} else {
 		var integrationConfig map[string]interface{}
 		switch reflect.TypeOf(integration["data"]).Kind() {
-			case reflect.Slice:
-				s := reflect.ValueOf(integration["data"])
-				for i := 0; i < s.Len(); i++ {
-					integrationConfig = s.Index(i).Interface().(map[string]interface{})
-					log.Println(integrationConfig)
-					nameconf, ok := integrationConfig["name"].(string)
-					if ok {
-						integrationConfigs[nameconf] = integrationConfig["value"]
-					} else {
-						break
-					}
+		case reflect.Slice:
+			s := reflect.ValueOf(integration["data"])
+			for i := 0; i < s.Len(); i++ {
+				integrationConfig = s.Index(i).Interface().(map[string]interface{})
+				log.Println(integrationConfig)
+				nameconf, ok := integrationConfig["name"].(string)
+				if ok {
+					integrationConfigs[nameconf] = integrationConfig["value"]
+				} else {
+					break
 				}
+			}
 		}
 	}
-	integrationConfigsJson, _ := json.Marshal(integrationConfigs)
-
+	integrationConfigsJson, err := json.Marshal(integrationConfigs)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error after creating integration instance",
+			"Could not re-marshal incoming integration instance config json: "+err.Error(),
+		)
+		return
+	}
 
 	// Map response body to resource schema attribute
 	result := IntegrationInstance{
