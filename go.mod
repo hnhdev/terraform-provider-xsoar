@@ -1,6 +1,6 @@
 module terraform-provider-xsoar
 
-go 1.17
+go 1.18
 
 require (
 	github.com/badarsebard/xsoar-sdk-go/openapi v0.2.30
