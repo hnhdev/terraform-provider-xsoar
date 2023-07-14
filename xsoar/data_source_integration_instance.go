@@ -152,7 +152,7 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 		IntegrationName:   types.String{Value: integration["brand"].(string)},
 		Account:           config.Account,
 		PropagationLabels: types.Set{Elems: propagationLabels, ElemType: types.StringType},
-		Config:            types.String{Value: string(integrationConfigsJson)},
+		ConfigJson:        types.String{Value: string(integrationConfigsJson)},
 	}
 
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
