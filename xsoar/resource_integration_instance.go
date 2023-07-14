@@ -25,7 +25,6 @@ func getIntegrationsFromAPIResponse(ctx context.Context, integration map[string]
 	integrationConfigs := make(map[string]any)
 	if integration["data"] == nil {
 		integrationConfigs = map[string]any{}
-		log.Println(integrationConfigs)
 	} else {
 		var integrationConfig map[string]interface{}
 		switch reflect.TypeOf(integration["data"]).Kind() {
@@ -36,9 +35,7 @@ func getIntegrationsFromAPIResponse(ctx context.Context, integration map[string]
 				nameconf, ok := integrationConfig["name"].(string)
 				if ok {
 					_, ok := secretConfigs[nameconf]
-					if ok {
-						// integrationConfigs[nameconf] = secretConfigs[nameconf]
-					} else {
+					if !ok {
 						integrationConfigs[nameconf] = integrationConfig["value"]
 					}
 				} else {
@@ -50,7 +47,7 @@ func getIntegrationsFromAPIResponse(ctx context.Context, integration map[string]
 	integrationConfigsJson, err := json.Marshal(integrationConfigs)
 	if err != nil {
 		diag.AddError(
-			"Error after creating integration instance",
+			"Error parsing incoming integration instance",
 			"Could not re-marshal incoming integration instance config json: "+err.Error(),
 		)
 		return "", err
@@ -248,7 +245,13 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		}
 	}
 	for key, element := range secretConfigs {
-		//TODO: add check for key already existing in configs
+		if _, ok := configs[key]; ok {
+			resp.Diagnostics.AddError(
+				"Error creating integration instance",
+				"Key: '"+key+"' exists in 'secret_config_json' and 'config_json'. Please choose 1.",
+			)
+			return
+		}
 		configs[key] = element
 	}
 	for _, parameter := range moduleConfiguration {
@@ -568,7 +571,7 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		err = json.Unmarshal([]byte(plan.ConfigJson.Value), &configs)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Error creating integration instance",
+				"Error updating integration instance",
 				"Could not parse integration instance config json: "+err.Error(),
 			)
 			return
@@ -584,14 +587,20 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		err = json.Unmarshal([]byte(plan.SecretConfigJson.Value), &secretConfigs)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Error creating integration instance",
+				"Error updating integration instance",
 				"Could not parse integration instance secret config json: "+err.Error()+"\n\""+plan.SecretConfigJson.Value+"\"",
 			)
 			return
 		}
 	}
 	for key, element := range secretConfigs {
-		//TODO: add check for key already existing in configs
+		if _, ok := configs[key]; ok {
+			resp.Diagnostics.AddError(
+				"Error updating integration instance",
+				"Key: '"+key+"' exists in 'secret_config_json' and 'config_json'. Please choose 1.",
+			)
+			return
+		}
 		configs[key] = element
 	}
 	for _, parameter := range moduleConfiguration {
