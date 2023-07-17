@@ -266,17 +266,14 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 
 	var integration map[string]interface{}
 	var httpResponse *http.Response
-	var body []byte
-
 	if plan.Account.Null || len(plan.Account.Value) == 0 {
 		integration, httpResponse, err = r.p.client.DefaultApi.CreateUpdateIntegrationInstance(ctx).CreateIntegrationRequest(moduleInstance).Execute()
 	} else {
 		integration, httpResponse, err = r.p.client.DefaultApi.CreateUpdateIntegrationInstanceAccount(ctx, "acc_"+plan.Account.Value).CreateIntegrationRequest(moduleInstance).Execute()
 	}
 	if err != nil {
-		log.Println(err.Error())
 		if httpResponse != nil {
-			body, _ = io.ReadAll(httpResponse.Body)
+			body, _ := io.ReadAll(httpResponse.Body)
 			payload, _ := io.ReadAll(httpResponse.Request.Body)
 			log.Printf("code: %d status: %s headers: %s body: %s payload: %s\n", httpResponse.StatusCode, httpResponse.Status, httpResponse.Header, string(body), string(payload))
 		}
@@ -609,6 +606,7 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		}
 		moduleInstance["data"] = append(moduleInstance["data"].([]map[string]interface{}), param)
 	}
+
 	var integration map[string]interface{}
 	var httpResponse *http.Response
 	if state.Account.Null || len(state.Account.Value) == 0 {
@@ -617,7 +615,6 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		integration, httpResponse, err = r.p.client.DefaultApi.CreateUpdateIntegrationInstanceAccount(ctx, "acc_"+plan.Account.Value).CreateIntegrationRequest(moduleInstance).Execute()
 	}
 	if err != nil {
-		log.Println(err.Error())
 		if httpResponse != nil {
 			body, _ := io.ReadAll(httpResponse.Body)
 			payload, _ := io.ReadAll(httpResponse.Request.Body)
