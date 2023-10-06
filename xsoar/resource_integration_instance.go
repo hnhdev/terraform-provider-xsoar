@@ -200,7 +200,6 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			}
 			moduleInstance["isIntegrationScript"] = isIntegrationScript
 			//moduleInstance["isLongRunning"] = false
-			moduleInstance["mappingId"] = MappingId
 			moduleInstance["name"] = plan.Name.Value
 			//moduleInstance["outgoingMapperId"] = ""
 			//moduleInstance["passwordProtected"] = false
@@ -327,6 +326,13 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		result.IncomingMapperId = types.String{Null: true}
 	}
 
+	MappingId, ok := integration["mappingId"].(string)
+	if ok {
+		result.MappingId = types.String{Value: MappingId}
+	} else {
+		result.MappingId = types.String{Null: true}
+	}
+
 	// Generate resource state struct
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -450,6 +456,7 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
 	}
+
 	MappingId, ok := integration["mappingId"].(string)
 	if ok {
 		result.MappingId = types.String{Value: MappingId}
@@ -539,7 +546,6 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 			}
 			moduleInstance["isIntegrationScript"] = isIntegrationScript
 			//moduleInstance["isLongRunning"] = false
-			moduleInstance["mappingId"] = MappingId
 			moduleInstance["name"] = plan.Name.Value
 			//moduleInstance["outgoingMapperId"] = ""
 			//moduleInstance["passwordProtected"] = false
@@ -670,6 +676,13 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		result.IncomingMapperId = types.String{Null: true}
 	}
 
+	MappingId, ok := integration["mappingId"].(string)
+	if ok {
+		result.MappingId = types.String{Value: MappingId}
+	} else {
+		result.MappingId = types.String{Null: true}
+	}
+
 	// Set state
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -776,6 +789,7 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
 	}
+
 	MappingId, ok := integration["mappingId"].(string)
 	if ok {
 		result.MappingId = types.String{Value: MappingId}
