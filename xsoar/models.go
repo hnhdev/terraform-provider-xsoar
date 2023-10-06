@@ -57,11 +57,11 @@ type IntegrationInstance struct {
 	Name              types.String `tfsdk:"name"`
 	Id                types.String `tfsdk:"id"`
 	IntegrationName   types.String `tfsdk:"integration_name"`
-	ConfigJson        types.String `tfsdk:"config_json"`
-	SecretConfigJson  types.String `tfsdk:"secret_config_json"`
+	Account           types.String `tfsdk:"account"`
 	Enabled           types.Bool   `tfsdk:"enabled"`
 	PropagationLabels types.Set    `tfsdk:"propagation_labels"`
-	Account           types.String `tfsdk:"account"`
+	ConfigJson        types.String `tfsdk:"config_json"`
+	SecretConfigJson  types.String `tfsdk:"secret_config_json"`
 	IncomingMapperId  types.String `tfsdk:"incoming_mapper_id"`
 	MappingId         types.String `tfsdk:"mapping_id"`
 }
