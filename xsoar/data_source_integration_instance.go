@@ -48,13 +48,15 @@ func (r dataSourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.S
 			},
 			"incoming_mapper_id": {
 				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Required: true,
 			},
 			"mapping_id": {
 				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Required: true,
+			},
+			"engine_id": {
+				Type:     types.StringType,
+				Required: true,
 			},
 		},
 	}, nil
@@ -167,6 +169,13 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 		result.MappingId = types.String{Value: MappingId}
 	} else {
 		result.MappingId = types.String{Null: true}
+	}
+
+	EngineId, ok := integration["engine"].(string)
+	if ok {
+		result.EngineId = types.String{Value: EngineId}
+	} else {
+		result.EngineId = types.String{Null: true}
 	}
 
 	// Generate resource state struct
