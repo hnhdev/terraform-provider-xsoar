@@ -99,14 +99,16 @@ func (r resourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.Sch
 			},
 			"incoming_mapper_id": {
 				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Required: true,
 			},
 			// aka classifier
 			"mapping_id": {
 				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Required: true,
+			},
+			"engine_id": {
+				Type:     types.StringType,
+				Required: true,
 			},
 		},
 	}, nil
@@ -175,7 +177,16 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			}
 			moduleInstance["enabled"] = Enabled
 			// todo: add this as a config option
-			//moduleInstance["engine"] = ""
+
+			var EngineId string
+			if ok := plan.EngineId.Value; ok != "" {
+				EngineId = plan.EngineId.Value
+			} else {
+				EngineId = ""
+			}
+			moduleInstance["engine"] = EngineId
+
+			// moduleInstance["engine"] = ""
 			//moduleInstance["engineGroup"] = ""
 			//moduleInstance["id"] = ""
 			var IncomingMapperId string
@@ -333,6 +344,13 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 		result.MappingId = types.String{Null: true}
 	}
 
+	EngineId, ok := integration["engine"].(string)
+	if ok {
+		result.EngineId = types.String{Value: EngineId}
+	} else {
+		result.EngineId = types.String{Null: true}
+	}
+
 	// Generate resource state struct
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -464,6 +482,13 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 		result.MappingId = types.String{Null: true}
 	}
 
+	EngineId, ok := integration["engine"].(string)
+	if ok {
+		result.EngineId = types.String{Value: EngineId}
+	} else {
+		result.EngineId = types.String{Null: true}
+	}
+
 	// Generate resource state struct
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -521,6 +546,15 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 			}
 			moduleInstance["enabled"] = Enabled
 			// todo: add this as a config option
+
+			var EngineId string
+			if ok := plan.EngineId.Value; ok != "" {
+				EngineId = plan.EngineId.Value
+			} else {
+				EngineId = ""
+			}
+			moduleInstance["engine"] = EngineId
+
 			//moduleInstance["engine"] = ""
 			//moduleInstance["engineGroup"] = ""
 			moduleInstance["id"] = state.Id.Value
@@ -683,6 +717,13 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 		result.MappingId = types.String{Null: true}
 	}
 
+	EngineId, ok := integration["engine"].(string)
+	if ok {
+		result.EngineId = types.String{Value: EngineId}
+	} else {
+		result.EngineId = types.String{Null: true}
+	}
+
 	// Set state
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -795,6 +836,13 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		result.MappingId = types.String{Value: MappingId}
 	} else {
 		result.MappingId = types.String{Null: true}
+	}
+
+	EngineId, ok := integration["engine"].(string)
+	if ok {
+		result.EngineId = types.String{Value: EngineId}
+	} else {
+		result.EngineId = types.String{Null: true}
 	}
 
 	if acc != "" {
