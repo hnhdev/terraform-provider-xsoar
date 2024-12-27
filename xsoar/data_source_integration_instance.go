@@ -3,14 +3,15 @@ package xsoar
 import (
 	"context"
 	"encoding/json"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"io"
 	"log"
 	"net/http"
 	"reflect"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type dataSourceIntegrationInstanceType struct{}
@@ -51,6 +52,10 @@ func (r dataSourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.S
 				Required: true,
 			},
 			"mapping_id": {
+				Type:     types.StringType,
+				Required: true,
+			},
+			"outgoing_mapper_id": {
 				Type:     types.StringType,
 				Required: true,
 			},
@@ -162,6 +167,12 @@ func (r dataSourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadD
 		result.IncomingMapperId = types.String{Value: IncomingMapperId}
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
+	}
+	OutgoingMapperId, ok := integration["outgoingMapperId"].(string)
+	if ok {
+		result.OutgoingMapperId = types.String{Value: OutgoingMapperId}
+	} else {
+		result.OutgoingMapperId = types.String{Null: true}
 	}
 
 	MappingId, ok := integration["mappingId"].(string)

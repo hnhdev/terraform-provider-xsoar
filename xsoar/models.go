@@ -63,6 +63,7 @@ type IntegrationInstance struct {
 	ConfigJson        types.String `tfsdk:"config_json"`
 	SecretConfigJson  types.String `tfsdk:"secret_config_json"`
 	IncomingMapperId  types.String `tfsdk:"incoming_mapper_id"`
+	OutgoingMapperId  types.String `tfsdk:"outgoing_mapper_id"`
 	MappingId         types.String `tfsdk:"mapping_id"`
 	EngineId          types.String `tfsdk:"engine_id"`
 }
