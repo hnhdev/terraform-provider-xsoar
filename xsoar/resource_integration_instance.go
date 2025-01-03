@@ -213,7 +213,7 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			} else {
 				OutgoingMapperId = ""
 			}
-			moduleInstance["oputgoingMapperId"] = OutgoingMapperId
+			moduleInstance["outgoingMapperId"] = OutgoingMapperId
 
 			moduleInstance["mappingId"] = MappingId
 			//moduleInstance["integrationLogLevel"] = ""
