@@ -39,6 +39,7 @@ resource "xsoar_integration_instance" "example" {
 ```
 
 ## Argument Reference
+
 - **name** (Required) The name of the integration instance.
 - **enabled** (Optional) Whether the integration should be enabled, defaults to True.
 - **integration_name** (Required) The name of the integration to be used. This represents the kind of integration to be configured, not the individual instance.
@@ -46,18 +47,24 @@ resource "xsoar_integration_instance" "example" {
 - **account** (Optional) The name of the multi-tenant account for the instance of the integration.
 - **propagation_labels** (Optional) A list of strings to apply to the resource as propagation labels.
 - **incoming_mapper_id** (Optional) The ID of the incoming mapper to use for the integration.
+- **outgoing_mapper_id** (Optional) The ID or the outgoing mapper to use for the integration.
 
 ## Attributes Reference
+
 - **id** The ID of this resource.
 
 <!-- ## Timeouts -->
 
 ## Import
+
 Integration instances can be imported using the resource `name`, e.g.,
+
 ```shell
 terraform import xsoar_integration_instance.example foo
 ```
+
 Integration instances that are account-specific require the `account` to be prefixed to the `name` with a period (`.`), e.g.,
+
 ```shell
 terraform import xsoar_integration_instance.example2 StarkIndustries.bar
 ```

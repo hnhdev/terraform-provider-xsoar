@@ -101,6 +101,10 @@ func (r resourceIntegrationInstanceType) GetSchema(_ context.Context) (tfsdk.Sch
 				Type:     types.StringType,
 				Required: true,
 			},
+			"outgoing_mapper_id": {
+				Type:     types.StringType,
+				Required: true,
+			},
 			// aka classifier
 			"mapping_id": {
 				Type:     types.StringType,
@@ -202,6 +206,15 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 			} else {
 				MappingId = ""
 			}
+			// outgoing mapperid
+			var OutgoingMapperId string
+			if ok := plan.OutgoingMapperId.Value; ok != "" {
+				OutgoingMapperId = plan.OutgoingMapperId.Value
+			} else {
+				OutgoingMapperId = ""
+			}
+			moduleInstance["outgoingMapperId"] = OutgoingMapperId
+
 			moduleInstance["mappingId"] = MappingId
 			//moduleInstance["integrationLogLevel"] = ""
 			// todo: add this as a config option (byoi)
@@ -336,6 +349,12 @@ func (r resourceIntegrationInstance) Create(ctx context.Context, req tfsdk.Creat
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
 	}
+	OutgoingMapperId, ok := integration["outgoingMapperId"].(string)
+	if ok {
+		result.OutgoingMapperId = types.String{Value: OutgoingMapperId}
+	} else {
+		result.OutgoingMapperId = types.String{Null: true}
+	}
 
 	MappingId, ok := integration["mappingId"].(string)
 	if ok {
@@ -467,12 +486,18 @@ func (r resourceIntegrationInstance) Read(ctx context.Context, req tfsdk.ReadRes
 	} else {
 		result.Enabled = types.Bool{Null: true}
 	}
-
 	IncomingMapperId, ok := integration["incomingMapperId"].(string)
 	if ok {
 		result.IncomingMapperId = types.String{Value: IncomingMapperId}
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
+	}
+
+	OutgoingMapperId, ok := integration["outgoingMapperId"].(string)
+	if ok {
+		result.OutgoingMapperId = types.String{Value: OutgoingMapperId}
+	} else {
+		result.OutgoingMapperId = types.String{Null: true}
 	}
 
 	MappingId, ok := integration["mappingId"].(string)
@@ -565,6 +590,13 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 				IncomingMapperId = ""
 			}
 			moduleInstance["incomingMapperId"] = IncomingMapperId
+			var OutgoingMapperId string
+			if ok := plan.OutgoingMapperId.Value; ok != "" {
+				OutgoingMapperId = plan.OutgoingMapperId.Value
+			} else {
+				OutgoingMapperId = ""
+			}
+			moduleInstance["outgoingMapperId"] = OutgoingMapperId
 			var MappingId string
 			if ok := plan.MappingId.Value; ok != "" {
 				MappingId = plan.MappingId.Value
@@ -709,6 +741,12 @@ func (r resourceIntegrationInstance) Update(ctx context.Context, req tfsdk.Updat
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
 	}
+	OutgoingMapperId, ok := integration["outgoingMapperId"].(string)
+	if ok {
+		result.OutgoingMapperId = types.String{Value: OutgoingMapperId}
+	} else {
+		result.OutgoingMapperId = types.String{Null: true}
+	}
 
 	MappingId, ok := integration["mappingId"].(string)
 	if ok {
@@ -829,6 +867,12 @@ func (r resourceIntegrationInstance) ImportState(ctx context.Context, req tfsdk.
 		result.IncomingMapperId = types.String{Value: IncomingMapperId}
 	} else {
 		result.IncomingMapperId = types.String{Null: true}
+	}
+	OutgoingMapperId, ok := integration["outgoingMapperId"].(string)
+	if ok {
+		result.OutgoingMapperId = types.String{Value: OutgoingMapperId}
+	} else {
+		result.OutgoingMapperId = types.String{Null: true}
 	}
 
 	MappingId, ok := integration["mappingId"].(string)
